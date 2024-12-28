@@ -10,7 +10,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.10.0",
+    "@anthropic-ai/sdk": "^0.33.1",
     "dotenv": "^16.0.0",
     "octokit": "^3.1.0"
   },
