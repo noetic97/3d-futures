@@ -1,5 +1,5 @@
 import { Octokit } from "octokit";
-import { Anthropic } from "@anthropic-ai/sdk";
+import Anthropic from "@anthropic-ai/sdk";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -64,7 +64,12 @@ const getContent = async (
 
     throw new Error("Content not found or is a directory");
   } catch (error) {
-    if (error.status === 404) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 404
+    ) {
       console.log(`File ${path} not found. Creating with default content.`);
       return getDefaultContent(path);
     }
@@ -92,7 +97,12 @@ const updateContent = async (
           sha = currentFile.data.sha;
         }
       } catch (error) {
-        if (error.status !== 404) {
+        if (
+          error &&
+          typeof error === "object" &&
+          "status" in error &&
+          error.status !== 404
+        ) {
           throw error;
         }
         // File doesn't exist, which is fine - we'll create it
@@ -119,7 +129,7 @@ const processWithAI = async (
   instructions: string
 ): Promise<string> => {
   try {
-    const message = await anthropic.messages.create({
+    const message = await anthropic.beta.messages.create({
       model: "claude-3-sonnet-20240229",
       max_tokens: 4000,
       temperature: 0.7,
@@ -168,7 +178,7 @@ const processingPipeline = async (
 // Example usage
 const main = async () => {
   const config: RepoConfig = {
-    owner: "your-username",
+    owner: "noetic97",
     repo: "3d-futures",
   };
 
