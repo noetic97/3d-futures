@@ -1,8 +1,8 @@
 import { Octokit } from "octokit";
 import Anthropic from "@anthropic-ai/sdk";
-import dotenv from "dotenv";
+import { config } from "dotenv";
 
-dotenv.config();
+config();
 
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN,
@@ -146,6 +146,24 @@ const processWithAI = async (
       ],
     });
 
+    // Calculate costs (approximate based on public pricing)
+    const inputTokens = message.usage.input_tokens;
+    const outputTokens = message.usage.output_tokens;
+    const totalTokens = inputTokens + outputTokens;
+
+    // Claude 3 Sonnet pricing (as of March 2024)
+    const inputCost = (inputTokens / 1000) * 0.003; // $0.003 per 1K input tokens
+    const outputCost = (outputTokens / 1000) * 0.015; // $0.015 per 1K output tokens
+    const totalCost = inputCost + outputCost;
+
+    console.log("\nAI Processing Stats:");
+    console.log("------------------");
+    console.log(`Input Tokens: ${inputTokens.toLocaleString()}`);
+    console.log(`Output Tokens: ${outputTokens.toLocaleString()}`);
+    console.log(`Total Tokens: ${totalTokens.toLocaleString()}`);
+    console.log(`Estimated Cost: $${totalCost.toFixed(4)}`);
+    console.log("------------------\n");
+
     return message.content[0].type === "text" ? message.content[0].text : "";
   } catch (error) {
     console.error("Error processing with Claude:", error);
@@ -153,18 +171,6 @@ const processWithAI = async (
   }
 };
 
-const validateEnv = () => {
-  const required = ["GITHUB_TOKEN", "ANTHROPIC_API_KEY"];
-  const missing = required.filter((key) => !process.env[key]);
-
-  if (missing.length) {
-    throw new Error(
-      `Missing required environment variables: ${missing.join(", ")}`
-    );
-  }
-};
-
-// Example processing pipeline
 const processingPipeline = async (
   config: RepoConfig,
   path: string,
@@ -175,11 +181,27 @@ const processingPipeline = async (
   await updateContent(config, { path, content: processedContent });
 };
 
+const validateEnv = () => {
+  const required = [
+    "GITHUB_TOKEN",
+    "ANTHROPIC_API_KEY",
+    "GITHUB_OWNER",
+    "GITHUB_REPO",
+  ];
+  const missing = required.filter((key) => !process.env[key]);
+
+  if (missing.length) {
+    throw new Error(
+      `Missing required environment variables: ${missing.join(", ")}`
+    );
+  }
+};
+
 // Example usage
 const main = async () => {
   const config: RepoConfig = {
-    owner: "noetic97",
-    repo: "3d-futures",
+    owner: process.env.GITHUB_OWNER!,
+    repo: process.env.GITHUB_REPO!,
   };
 
   try {
